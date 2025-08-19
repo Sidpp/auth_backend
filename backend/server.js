@@ -2,6 +2,8 @@
 const express = require("express");
 const app = express();
 const userRoutes = require("./routes/user");
+const jiraRoutes = require("./routes/jira")
+const googleRoutes = require("./routes/google")
 const database = require("./config/database");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -28,6 +30,9 @@ app.use(
 
 // Setting up routes
 app.use("/api/auth", userRoutes);
+app.use("/api",jiraRoutes)
+app.use("/api",googleRoutes)
+
 
 // Testing the server
 app.get("/", (req, res) => {
