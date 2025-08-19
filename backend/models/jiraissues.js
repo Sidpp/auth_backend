@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose")
 
 const jiraIssueSchema = new mongoose.Schema(
   {
@@ -124,5 +124,7 @@ const jiraIssueSchema = new mongoose.Schema(
   { timestamps: true } // Adds createdAt and updatedAt
 );
 
-const JiraIssue = mongoose.model("issues", jiraIssueSchema);
-export default JiraIssue;
+
+module.exports = mongoose.model("issues", jiraIssueSchema);
+// const JiraIssue = mongoose.model("issues", jiraIssueSchema);
+// export default JiraIssue;
