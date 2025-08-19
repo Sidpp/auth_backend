@@ -1,10 +1,15 @@
-import axios from "axios";
-import jiraissues from "../models/jiraissues.js";
-import User from "../models/User.js";
-import Credential from "../models/jiracredential.js";
+//import axios from "axios";
+// import jiraissues from "../models/jiraissues.js";
+// import User from "../models/User.js";
+// import Credential from "../models/jiracredential.js";
+const axios = require("axios");
+const jiraissues = require("../models/jiraissues.js")
+const User = require("../models/User.js");
+const Credential = require("../models/jiracredential.js")
+
 
 // GET issue by id
-export const getJiraIssueById = async (req, res) => {
+exports.getJiraIssueById = async (req, res) => {
   try {
     const issueId = req.params.id;
 
@@ -32,7 +37,7 @@ export const getJiraIssueById = async (req, res) => {
 };
 
 // Get all Jira Issues 
-export const getAllJiraIssues = async (req, res) => {
+exports.getAllJiraIssues = async (req, res) => {
   try {
     const userId = req.user?.id;
 
@@ -73,7 +78,7 @@ export const getAllJiraIssues = async (req, res) => {
 };
 
 // get jira credentials
-export const getJiraCredentials = async (req, res) => {
+exports.getJiraCredentials = async (req, res) => {
   try {
     const userId = req.user?.id;
 
@@ -111,7 +116,7 @@ export const getJiraCredentials = async (req, res) => {
 };
 
 // POST connect jira through api
-export const callJiraConnectAPI = async (req, res) => {
+exports.callJiraConnectAPI = async (req, res) => {
   try {
     const { jira_email, jira_domain, jira_api_key } = req.body;
     const userId = req.user?.id;
