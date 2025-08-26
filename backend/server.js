@@ -8,6 +8,8 @@ const database = require("./config/database");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const { cloudinaryConnect } = require("./config/cloudinary");
+const fileUpload = require("express-fileupload");
 
 // Setting up port number
 const PORT = process.env.PORT || 5000;
@@ -17,6 +19,16 @@ dotenv.config();
 
 // Connecting to database
 database.connect();
+
+app.use(
+	fileUpload({
+		useTempFiles: true,
+		tempFileDir: "/tmp/",
+	})
+);
+
+// Connecting to cloudinary
+cloudinaryConnect();
  
 // Middlewares
 app.use(express.json());

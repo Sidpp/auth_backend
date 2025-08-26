@@ -1,14 +1,16 @@
 // Import the required modules
 const express = require("express")
-const { signin, sendotp, register, getUserDetails, getAllUsers, deleteUser, editUser, changePassword, updateBasicInfo } = require("../controllers/AuthController")
+const { signin, sendotp, register, getUserDetails, getAllUsers, deleteUser, editUser, changePassword, updateBasicInfo, updateImage } = require("../controllers/AuthController")
 const { resetPasswordToken, resetPassword } = require("../controllers/resetPasswordController")
 const router = express.Router()
 const {auth, isAdmin} = require("../middleware/auth")
-const { requestEmailUpdate, verifyNewEmail } = require("../controllers/resetEmailAddress")
+const { sendEmailOtp, verifyEmailOtp } = require("../controllers/resetEmailAddress")
 
 //Route for Email verification
-router.post("/request-email-update",auth,requestEmailUpdate)
-router.get("/verify-email", verifyNewEmail)
+// Route for sending otp for email verification
+router.post("/sendotp-email", sendEmailOtp)
+// Route for resetting user's emailemail after verification
+router.post("/verifyotp-email", verifyEmailOtp)
 
 // Routes for Login, Signup, and Authentication
 
@@ -40,7 +42,7 @@ router.post("/sendotp", sendotp)
 router.put("/change-password",auth,changePassword)
 
 //Profile image
-//router.put("/update-image",auth,updateImage)
+router.put("/update-image",auth,updateImage)
 
 //update basic name, email
 router.put("/update-info",auth,updateBasicInfo);

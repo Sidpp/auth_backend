@@ -30,7 +30,7 @@ exports.getGoogleSheetById = async (req, res) => {
   }
 };
 
-// GET all data
+// GET all data by user
 exports.getAllGoogleDetails = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -76,7 +76,7 @@ exports.getAllGoogleDetails = async (req, res) => {
 //   try {
 //     const userId = req.user.id;
 
-//     const projects = await GoogleSheet.find({ userId: userId });
+//     const projects = await GoogleSheet.find();
 
 //     res.status(200).json({
 //       success: true,

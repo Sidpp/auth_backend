@@ -4,12 +4,10 @@ const OTP = require("../models/OTP");
 const jwt = require("jsonwebtoken");
 const otpGenerator = require("otp-generator");
 const mailSender = require("../utils/mailSender");
-//const { uploadImageToCloudinary } = require("../utils/imageUploader")
+const { uploadImageToCloudinary } = require("../utils/imageUploader")
 const { passwordUpdated } = require("../mail/templates/passwordUpdate");
-//const Profile = require("../models/Profile");
-require("dotenv").config();
 
-//Verify Email
+require("dotenv").config();
 
 
 
@@ -323,9 +321,9 @@ exports.sendotp = async (req, res) => {
       specialChars: false,
     });
     const result = await OTP.findOne({ otp: otp });
-    console.log("Result is Generate OTP Func");
-    console.log("OTP", otp);
-    console.log("Result", result);
+    // console.log("Result is Generate OTP Func");
+    // console.log("OTP", otp);
+    // console.log("Result", result);
     while (result) {
       otp = otpGenerator.generate(6, {
         upperCaseAlphabets: false,
@@ -333,7 +331,7 @@ exports.sendotp = async (req, res) => {
     }
     const otpPayload = { email, otp };
     const otpBody = await OTP.create(otpPayload);
-    console.log("OTP Body", otpBody);
+    //console.log("OTP Body", otpBody);
 
     res.status(200).json({
       success: true,
@@ -411,35 +409,37 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-// exports.updateImage = async (req, res) => {
-//   try {
-//     const displayPicture = req.files.displayPicture
-//     const userId = req.user.id
-//     const image = await uploadImageToCloudinary(
-//       displayPicture,
-//       process.env.FOLDER_NAME,
-//       1000,
-//       1000
-//     )
-//     console.log(image)
-//     const updatedProfile = await User.findByIdAndUpdate(
-//       { _id: userId },
-//       { image: image.secure_url },
-//       { new: true }
-//     )
-//     res.send({
-//       success: true,
-//       message: `Image Updated successfully`,
-//       data: updatedProfile,
-//     })
-//   } catch (error) {
-//     return res.status(500).json({
-//       success: false,
-//       message: error.message,
-//     })
-//   }
-// }
+//update profile image
+exports.updateImage = async (req, res) => {
+  try {
+    const displayPicture = req.files.displayPicture
+    const userId = req.user.id
+    const image = await uploadImageToCloudinary(
+      displayPicture,
+      process.env.FOLDER_NAME,
+      1000,
+      1000
+    )
+    console.log(image)
+    const updatedProfile = await User.findByIdAndUpdate(
+      { _id: userId },
+      { image: image.secure_url },
+      { new: true }
+    )
+    res.send({
+      success: true,
+      message: `Image Updated successfully`,
+      data: updatedProfile,
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    })
+  }
+}
 
+//Update info
 exports.updateBasicInfo = async (req, res) => {
   try {
     const userId = req.user.id;

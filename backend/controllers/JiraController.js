@@ -3,10 +3,9 @@
 // import User from "../models/User.js";
 // import Credential from "../models/jiracredential.js";
 const axios = require("axios");
-const jiraissues = require("../models/jiraissues.js")
+const jiraissues = require("../models/jiraissues.js");
 const User = require("../models/User.js");
-const Credential = require("../models/jiracredential.js")
-
+const Credential = require("../models/jiracredential.js");
 
 // GET issue by id
 exports.getJiraIssueById = async (req, res) => {
@@ -36,7 +35,7 @@ exports.getJiraIssueById = async (req, res) => {
   }
 };
 
-// Get all Jira Issues 
+// Get all Jira Issues
 exports.getAllJiraIssues = async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -49,9 +48,9 @@ exports.getAllJiraIssues = async (req, res) => {
     if (!credentials) {
       return res.status(400).json({ error: "Credentials not found " });
     }
-   // console.log("data",credentials.issues)
+    // console.log("data",credentials.issues)
 
-        const issueIds = credentials.issues; // Array of ObjectIds
+    const issueIds = credentials.issues; // Array of ObjectIds
 
     if (!issueIds || issueIds.length === 0) {
       return res.status(200).json({
@@ -129,8 +128,11 @@ exports.callJiraConnectAPI = async (req, res) => {
       return res.status(400).json({ error: "Missing jira required fields" });
     }
 
+    const jiraApiUrl =
+      process.env.JIRA_CONNECT_URL;
+
     const response = await axios.post(
-      "http://52.203.116.212:8000/api/jira/connect",
+      `${jiraApiUrl}/api/jira/connect`,
       {
         jira_email,
         jira_domain,
