@@ -60,4 +60,63 @@ const ProjectModelSchema = new mongoose.Schema(
   { collection: "GoogleSheet" }
 );
 
+// ProjectModelSchema.index({
+//   "source_data.Project": "text",
+//   "source_data.Program": "text",
+//   "source_data.Portfolio": "text",
+//   "source_data.Project_Manager": "text",
+//   "source_data.Vendor": "text",
+//   "source_data.Contract_ID": "text",
+//   "source_data.Risks": "text",
+//   "source_data.Issues": "text",
+// });
+ProjectModelSchema.index({
+  row_index: "text",
+  spreadsheet_id: "text",
+  "ai_predictions.Risk": "text",
+  "ai_predictions.Issues": "text",
+  "ai_predictions.Forecasted_Cost": "text",
+  "ai_predictions.Forecasted_Deviation": "text",
+  "ai_predictions.Burnout_Risk": "text",
+
+  "source_data.Program": "text",
+  "source_data.Portfolio": "text",
+  "source_data.Project_Manager": "text",
+  "source_data.Vendor": "text",
+  "source_data.Contract_ID": "text",
+  "source_data.Contract_Start_Date": "text",
+  "source_data.Contract_End_Date": "text",
+  "source_data.Contract_Ceiling_Price": "text",
+  "source_data.Contract_Target_Price": "text",
+  "source_data.Actual_Contract_Spend": "text",
+  "source_data.Expiring_Soon": "text",
+  "source_data.Resource_Name": "text",
+  "source_data.Role": "text",
+  "source_data.Allocated_Hours": "text",
+  "source_data.Actual_Hours": "text",
+  "source_data.Planned_Cost": "text",
+  "source_data.Actual_Cost": "text",
+  "source_data.Update_Date": "text",
+  "source_data.Project": "text",
+  "source_data.Burnout_Risk_Percent": "text",
+  "source_data.EV_Percent": "text",
+  "source_data.PV_Percent": "text",
+  "source_data.AC_Dollar": "text",
+  "source_data.CPI": "text",
+  "source_data.SPI": "text",
+  "source_data.Forecasted_Cost": "text",
+  "source_data.Forecast_Deviation": "text",
+  "source_data.Variance_at_Completion": "text",
+  "source_data.Project_Status_RAG": "text",
+  "source_data.Milestone_Status": "text",
+  "source_data.Risks": "text",
+  "source_data.Issues": "text",
+  "source_data.Data_Source": "text",
+  "source_data.Dependency_Type": "text",
+  "source_data.Impacted_Dashboard": "text",
+
+  project_identifier: "text",
+
+});
+
 module.exports = mongoose.model("GoogleSheet", ProjectModelSchema);

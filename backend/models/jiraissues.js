@@ -124,6 +124,43 @@ const jiraIssueSchema = new mongoose.Schema(
   { timestamps: true } // Adds createdAt and updatedAt
 );
 
+// // 🔎 Text index for search
+// jiraIssueSchema.index({
+//   project_name: "text",
+//   summary: "text",
+//   assignee: "text",
+//   reporter: "text",
+//   labels: "text",
+//   ai_summary: "text",
+//   executive_summary: "text",
+// });
+
+// 🔎 Text index including ALL fields
+jiraIssueSchema.index({
+  ai_delay_label: "text",
+  ai_delay_score: "text",
+  ai_summary: "text",
+  ai_priority_score: "text",
+  project_name: "text",
+  worklog_entries: "text",
+  team: "text",
+  summary: "text",
+  assignee: "text",
+  reporter: "text",
+  labels: "text",
+  original_estimate: "text",
+  remaining_estimate: "text",
+  time_logged: "text",
+  status: "text",
+  due_date: "text",
+  update_inactivity_days: "text",
+  burnout_flag: "text",
+  executive_summary: "text",
+  last_ai_interaction_day: "text",
+  priority: "text",
+  user_id: "text",
+});
+
 
 module.exports = mongoose.model("issues", jiraIssueSchema);
 // const JiraIssue = mongoose.model("issues", jiraIssueSchema);
