@@ -60,7 +60,7 @@ exports.getAllGoogleDetails = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Jira issues fetched successfully from DB.",
-      data:issues,
+      data: issues,
     });
   } catch (error) {
     console.error("Error fetching projects:", error);
@@ -70,6 +70,8 @@ exports.getAllGoogleDetails = async (req, res) => {
     });
   }
 };
+
+
 
 // // GET all data
 // exports.getAllGoogleDetails = async (req, res) => {

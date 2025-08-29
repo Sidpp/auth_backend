@@ -20,12 +20,23 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    // Define the role field with type String and enum values of "Admin", "Student", or "Visitor"
     role: {
       type: String,
       enum: ["Admin", "User"],
       required: true,
     },
+    projectrole: {
+      type: String,
+      enum: ["Executive", "Portfolio Manager", "Team Leader","Project Manager"],
+    },
+    assignJiraProjects: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "issues",
+    }],
+    assignGoogleProjects: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "GoogleSheet",
+    }],
     image: {
       type: String,
     },

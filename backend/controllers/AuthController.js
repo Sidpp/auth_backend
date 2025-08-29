@@ -44,9 +44,9 @@ exports.getAllUsers = async (req, res) => {
 exports.editUser = async (req, res) => {
   try {
     const { userId } = req.params; // user ID from URL params
-    const { name, email, role } = req.body; // fields to update
+    const { name, email, role,projectrole,assignJiraProjects,assignGoogleProjects } = req.body; // fields to update
 
-    if (!name && !email && !role) {
+    if (!name && !email && !role && !projectrole) {
       return res.status(400).json({
         success: false,
         message: "At least one field (name, email, role) is required to update",
@@ -56,7 +56,7 @@ exports.editUser = async (req, res) => {
     // Update user (exclude password updates here)
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $set: { name, email, role } },
+      { $set: { name, email, role, projectrole,assignJiraProjects,assignGoogleProjects,assignGoogleProjects } },
       { new: true, runValidators: true, select: "-password" }
     );
 
@@ -145,9 +145,9 @@ exports.getUserDetails = async (req, res) => {
 exports.register = async (req, res) => {
   try {
     // Destructure fields from the request body
-    const { name, email, password, confirmPassword, role } = req.body;
+    const { name, email, password, confirmPassword, role, projectrole } = req.body;
     // Check if All Details are there or not
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword || !projectrole ) {
       return res.status(403).send({
         success: false,
         message: "All Fields are required",
@@ -174,22 +174,13 @@ exports.register = async (req, res) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create the user
-    let approved = "";
-    approved === "Instructor" ? (approved = false) : (approved = true);
 
-    // // Create the Additional Profile For User
-    // const profileDetails = await Profile.create({
-    //   gender: null,
-    //   dateOfBirth: null,
-    //   about: null,
-    //   contactNumber: null,
-    // })
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
       role: role,
+      projectrole: projectrole
     });
 
     return res.status(200).json({

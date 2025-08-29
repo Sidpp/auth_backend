@@ -1,12 +1,40 @@
 const mongoose = require("mongoose");
 
+const alertSchema = new mongoose.Schema(
+  {
+    role: {
+      type: String,
+
+    },
+    alert_type: {
+      type: String,
+      
+    },
+    message: {
+      type: String,
+    
+    },
+    action_required: {
+      type: String,
+
+    },
+    created_at: {
+      type: Date,
+      default: Date.now,
+    }
+  },
+  { _id: false } // if this is always embedded in another schema
+);
+
 const AiPredictionsSchema = new mongoose.Schema({
   Risk: String,
   Issues: String,
   Forecasted_Cost: Number,
   Forecasted_Deviation: Number,
   Burnout_Risk: Number,
+  alerts: [alertSchema]
 });
+
 
 const SourceDataSchema = new mongoose.Schema({
   Program: String,

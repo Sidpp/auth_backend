@@ -5,6 +5,8 @@ const userRoutes = require("./routes/user");
 const jiraRoutes = require("./routes/jira")
 const googleRoutes = require("./routes/google")
 const searchRoutes = require("./routes/search")
+const alertsRoutes = require("./routes/alerts")
+const feedbackRoutes = require("./routes/feedback")
 const database = require("./config/database");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -46,6 +48,8 @@ app.use("/api/auth", userRoutes);
 app.use("/api",jiraRoutes)
 app.use("/api",googleRoutes)
 app.use("/api",searchRoutes)
+app.use("/api",alertsRoutes)
+app.use("/api",feedbackRoutes)
 
 
 // Testing the server

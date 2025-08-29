@@ -1,5 +1,31 @@
 const mongoose = require("mongoose")
 
+const alertSchema = new mongoose.Schema(
+  {
+    role: {
+      type: String,
+
+    },
+    alert_type: {
+      type: String,
+      
+    },
+    message: {
+      type: String,
+    
+    },
+    action_required: {
+      type: String,
+
+    },
+    created_at: {
+      type: Date,
+      default: Date.now,
+    }
+  },
+  { _id: false } // if this is always embedded in another schema
+);
+
 const jiraIssueSchema = new mongoose.Schema(
   {
     // AI-based delay label: "On Track", "At Risk", or "Delayed"
@@ -115,11 +141,16 @@ const jiraIssueSchema = new mongoose.Schema(
     priority: {
       type: String,
     },
+    marker:{
+      type: String,
+      default: null,
+    },
 
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "credentials",
     },
+    alerts: [alertSchema]
   },
   { timestamps: true } // Adds createdAt and updatedAt
 );
@@ -148,6 +179,7 @@ jiraIssueSchema.index({
   assignee: "text",
   reporter: "text",
   labels: "text",
+  marker:"text",
   original_estimate: "text",
   remaining_estimate: "text",
   time_logged: "text",
@@ -159,6 +191,12 @@ jiraIssueSchema.index({
   last_ai_interaction_day: "text",
   priority: "text",
   user_id: "text",
+
+  "alerts.role": "text",
+  "alerts.alert_type": "text",
+  "alerts.message": "text",
+  "alerts.action_required": "text",
+  "alerts.created_at": "text",
 });
 
 
