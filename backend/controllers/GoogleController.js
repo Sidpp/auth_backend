@@ -2,6 +2,174 @@ const googlecredentials = require("../models/googlecredentials");
 const GoogleSheet = require("../models/googleSheet");
 const User = require("../models/User");
 
+// Mark Google alert as read
+exports.markGoogleAlertRead = async (req, res) => {
+  try {
+    const { projectId, alertId } = req.body;
+
+    if (!projectId || !alertId) {
+      return res.status(400).json({
+        success: false,
+        message: "projectId and alertId are required",
+      });
+    }
+
+    const updatedProject = await GoogleSheet.findOneAndUpdate(
+      {
+        _id: projectId,
+        "ai_predictions.alerts.alert_id": alertId, // match alert_id, not _id
+      },
+      { $set: { "ai_predictions.alerts.$.readed": true } }, // update readed flag
+      { new: true }
+    );
+
+    if (!updatedProject) {
+      return res.status(404).json({
+        success: false,
+        message: "Project or alert not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Google alert marked as read",
+      project: updatedProject,
+    });
+  } catch (error) {
+    console.error("Error marking Google alert as read:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error,
+    });
+  }
+};
+
+
+exports.updateGoogleAlertStatus = async (req, res) => {
+  try {
+    const { projectId, alertId, operation } = req.body; 
+    // projectId = GoogleSheet document _id
+    // alertId = alert _id inside ai_predictions.alerts
+    // operation = "approved" | "rejected"
+
+    if (!projectId || !alertId) {
+      return res.status(400).json({
+        success: false,
+        message: "projectId and alertId are required",
+      });
+    }
+
+    if (!operation) {
+      return res.status(400).json({
+        success: false,
+        message: "operation is required",
+      });
+    }
+
+    let updateFields = {};
+    if (operation === "approved") {
+      updateFields = {
+        "ai_predictions.alerts.$.alertapproved": true,
+        "ai_predictions.alerts.$.alertrejected": false,
+      };
+    } else if (operation === "rejected") {
+      updateFields = {
+        "ai_predictions.alerts.$.alertrejected": true,
+        "ai_predictions.alerts.$.alertapproved": false,
+      };
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid operation, must be 'approved' or 'rejected'",
+      });
+    }
+
+    // Find and update the alert inside ai_predictions.alerts
+    const updatedProject = await GoogleSheet.findOneAndUpdate(
+      { _id: projectId, "ai_predictions.alerts._id": alertId },
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!updatedProject) {
+      return res.status(404).json({
+        success: false,
+        message: "Project or alert not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Google alert ${operation} successfully`,
+      project: updatedProject,
+    });
+  } catch (error) {
+    console.error("Error updating Google alert status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error,
+    });
+  }
+};
+
+exports.updateGoogleIssueStatus = async (req, res) => {
+  try {
+    const { projectId, operation } = req.body; // projectId = _id of GoogleSheet doc
+
+    if (!projectId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "projectId is required" });
+    }
+
+    if (!operation) {
+      return res
+        .status(400)
+        .json({ success: false, message: "operation is required" });
+    }
+
+    let updateFields = {};
+
+    if (operation === "approved") {
+      updateFields = { "ai_predictions.approved": true, "ai_predictions.rejected": false };
+    } else if (operation === "rejected") {
+      updateFields = { "ai_predictions.rejected": true, "ai_predictions.approved": false };
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid operation, must be 'approved' or 'rejected'",
+      });
+    }
+
+    // Update GoogleSheet document
+    const updatedProject = await GoogleSheet.findByIdAndUpdate(
+      projectId,
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!updatedProject) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Project not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Project ${operation}d successfully`,
+      project: updatedProject,
+    });
+  } catch (error) {
+    console.error("Error updating Google issue status:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+
 //GET google data by id
 exports.getGoogleSheetById = async (req, res) => {
   try {

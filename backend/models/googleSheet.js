@@ -1,30 +1,35 @@
 const mongoose = require("mongoose");
 
-const alertSchema = new mongoose.Schema(
-  {
-    role: {
-      type: String,
-
-    },
-    alert_type: {
-      type: String,
-      
-    },
-    message: {
-      type: String,
-    
-    },
-    action_required: {
-      type: String,
-
-    },
-    created_at: {
-      type: Date,
-      default: Date.now,
-    }
+const alertSchema = new mongoose.Schema({
+  alert_id: {
+    type:String,
   },
-  { _id: false } // if this is always embedded in another schema
-);
+  role: {
+    type: String,
+  },
+  alert_type: {
+    type: String,
+  },
+  message: {
+    type: String,
+  },
+  action_required: {
+    type: String,
+  },
+  created_at: {
+    type: Date,
+    default: Date.now,
+  },
+  alertapproved: {
+    type: Boolean,
+  },
+  alertrejected: {
+    type: Boolean,
+  },
+  readed: {
+    type: Boolean,
+  },
+});
 
 const AiPredictionsSchema = new mongoose.Schema({
   Risk: String,
@@ -32,9 +37,10 @@ const AiPredictionsSchema = new mongoose.Schema({
   Forecasted_Cost: Number,
   Forecasted_Deviation: Number,
   Burnout_Risk: Number,
-  alerts: [alertSchema]
+  approved: Boolean,
+  rejected: Boolean,
+  alerts: [alertSchema],
 });
-
 
 const SourceDataSchema = new mongoose.Schema({
   Program: String,
@@ -144,7 +150,6 @@ ProjectModelSchema.index({
   "source_data.Impacted_Dashboard": "text",
 
   project_identifier: "text",
-
 });
 
 module.exports = mongoose.model("GoogleSheet", ProjectModelSchema);

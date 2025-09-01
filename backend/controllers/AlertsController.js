@@ -1,36 +1,26 @@
 const Issue = require("../models/jiraissues"); // Jira model
 const GoogleSheet = require("../models/googleSheet"); // Google model
-const JiraNotification = require("../models/jiraNotification");
-
-// exports.getJiraNotifications = async (req, res) => {
-//   try {
-//     const notifications = await JiraNotification.find();
-//     res.status(200).json({ success: true, notifications });
-//   } catch (error) {
-//     console.error("Error fetching notifications:", error);
-//     res.status(500).json({ success: false, message: "Server error", error });
-//   }
-// };
-
 
 exports.deleteNotification = async (req, res) => {
   try {
-    const { id, source, message } = req.body;
+    const { id, source, alert_id } = req.body;
 
-    if (!id || !source) {
+    if (!id || !source || !alert_id) {
       return res.status(400).json({ success: false, message: "Missing fields" });
     }
 
     if (source === "Jira") {
       await Issue.updateOne(
         { _id: id },
-        { $pull: { alerts: { message  } } }
+        { $pull: { alerts: { alert_id } } }   // ✅ match by alert_id
       );
     } else if (source === "Google") {
       await GoogleSheet.updateOne(
         { _id: id },
-        { $pull: { "ai_predictions.alerts": { message  } } }
+        { $pull: { "ai_predictions.alerts": { alert_id } } }  // ✅ match by alert_id
       );
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid source" });
     }
 
     res.json({ success: true, message: "Notification deleted" });
@@ -39,6 +29,7 @@ exports.deleteNotification = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 exports.getAllAlerts = async (req, res) => {
   try {
@@ -53,31 +44,39 @@ exports.getAllAlerts = async (req, res) => {
       ).lean(),
     ]);
 
-    const jiraData = issues.reduce((acc, issue) => {
-      const alerts = issue.alerts.map((alert) => ({
+    // Flatten Jira alerts
+    const jiraAlerts = issues.flatMap((issue) =>
+      issue.alerts.map((alert) => ({
         _id: issue._id,
         source: "Jira",
+        project: issue.project_name, // keep if needed for reference
         ...alert,
-      }));
-      acc[issue.project_name] = alerts;
-      return acc;
-    }, {});
+        timestamp: alert.alert_timestamp, // normalize key
+      }))
+    );
 
-    const googleData = projects.reduce((acc, project) => {
-      const projectName = project.source_data?.Project || "Unknown Project";
-      const alerts = project.ai_predictions.alerts.map((alert) => ({
+    // Flatten Google alerts
+    const googleAlerts = projects.flatMap((project) =>
+      project.ai_predictions.alerts.map((alert) => ({
         _id: project._id,
         source: "Google",
+        project: project.source_data?.Project || "Unknown Project",
         ...alert,
-      }));
-      acc[projectName] = alerts;
-      return acc;
-    }, {});
+        timestamp: alert.timestamp, // normalize key
+      }))
+    );
 
-    res.json({ success: true, jiraData, googleData });
+    // Merge both and sort by latest timestamp
+    const allAlerts = [...jiraAlerts, ...googleAlerts].sort(
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+    );
+
+    res.json({ success: true, alerts: allAlerts });
   } catch (error) {
     console.error("Error fetching alerts:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
  

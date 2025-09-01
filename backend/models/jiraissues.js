@@ -1,30 +1,37 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
-const alertSchema = new mongoose.Schema(
-  {
-    role: {
-      type: String,
+const alertSchema = new mongoose.Schema({
+alert_id: {
+  type: String,
+  required: true,
+},
 
-    },
-    alert_type: {
-      type: String,
-      
-    },
-    message: {
-      type: String,
-    
-    },
-    action_required: {
-      type: String,
-
-    },
-    created_at: {
-      type: Date,
-      default: Date.now,
-    }
+  role: {
+    type: String,
   },
-  { _id: false } // if this is always embedded in another schema
-);
+  alert_type: {
+    type: String,
+  },
+  message: {
+    type: String,
+  },
+  action_required: {
+    type: String,
+  },
+  alert_timestamp: {
+    type: Date,
+    default: Date.now,
+  },
+  alertapproved: {
+    type: Boolean,
+  },
+  alertrejected: {
+    type: Boolean,
+  },
+  readed: {
+    type: Boolean,
+  },
+});
 
 const jiraIssueSchema = new mongoose.Schema(
   {
@@ -124,12 +131,12 @@ const jiraIssueSchema = new mongoose.Schema(
     },
     burnout_flag: {
       type: String,
-      default:null
+      default: null,
     },
 
     executive_summary: {
       type: String,
-      default:null
+      default: null,
     },
 
     last_ai_interaction_day: {
@@ -141,16 +148,23 @@ const jiraIssueSchema = new mongoose.Schema(
     priority: {
       type: String,
     },
-    marker:{
+    marker: {
       type: String,
       default: null,
     },
-
+    approved: {
+      type: Boolean,
+      default: false,
+    },
+    rejected: {
+      type: Boolean,
+      default: false,
+    },
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "credentials",
     },
-    alerts: [alertSchema]
+    alerts: [alertSchema],
   },
   { timestamps: true } // Adds createdAt and updatedAt
 );
@@ -179,7 +193,7 @@ jiraIssueSchema.index({
   assignee: "text",
   reporter: "text",
   labels: "text",
-  marker:"text",
+  marker: "text",
   original_estimate: "text",
   remaining_estimate: "text",
   time_logged: "text",
@@ -198,7 +212,6 @@ jiraIssueSchema.index({
   "alerts.action_required": "text",
   "alerts.created_at": "text",
 });
-
 
 module.exports = mongoose.model("issues", jiraIssueSchema);
 // const JiraIssue = mongoose.model("issues", jiraIssueSchema);

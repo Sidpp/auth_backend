@@ -1,11 +1,158 @@
-//import axios from "axios";
-// import jiraissues from "../models/jiraissues.js";
-// import User from "../models/User.js";
-// import Credential from "../models/jiracredential.js";
 const axios = require("axios");
 const jiraissues = require("../models/jiraissues.js");
 const User = require("../models/User.js");
+const mongoose = require("mongoose");
 const Credential = require("../models/jiracredential.js");
+
+exports.markJiraAlertRead = async (req, res) => {
+  try {
+    const { issueId, alertId } = req.body;
+
+    if (!issueId || !alertId) {
+      return res.status(400).json({
+        success: false,
+        message: "issueId and alertId are required",
+      });
+    }
+
+    const updatedIssue = await jiraissues.findOneAndUpdate(
+      { 
+        _id: new mongoose.Types.ObjectId(issueId), 
+        "alerts.alert_id": new mongoose.Types.ObjectId(alertId)  // cast alertId
+      },
+      { $set: { "alerts.$.readed": true } },
+      { new: true }
+    );
+
+    if (!updatedIssue) {
+      return res.status(404).json({
+        success: false,
+        message: "Issue or alert not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Jira alert marked as read",
+      issue: updatedIssue,
+    });
+  } catch (error) {
+    console.error("Error marking Jira alert as read:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error,
+    });
+  }
+};
+
+exports.updateAlertStatus = async (req, res) => {
+  try {
+    const { issueId, alertId, operation } = req.body;
+
+    if (!issueId || !alertId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "issueId and alertId are required" });
+    }
+
+    if (!operation) {
+      return res
+        .status(400)
+        .json({ success: false, message: "operation is required" });
+    }
+
+    let updateFields = {};
+    if (operation === "approved") {
+      updateFields = {
+        "alerts.$.alertapproved": true,
+        "alerts.$.alertrejected": false,
+      };
+    } else if (operation === "rejected") {
+      updateFields = {
+        "alerts.$.alertrejected": true,
+        "alerts.$.alertapproved": false,
+      };
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid operation, must be 'approved' or 'rejected'",
+      });
+    }
+
+    const updatedIssue = await jiraissues.findOneAndUpdate(
+  { 
+    _id: new mongoose.Types.ObjectId(issueId),
+    "alerts.alert_id": new mongoose.Types.ObjectId(alertId)   // cast alertId to ObjectId
+  },
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!updatedIssue) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Issue or alert not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Alert ${operation} successfully`,
+      issue: updatedIssue,
+    });
+  } catch (error) {
+    console.error("Error updating alert status:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error });
+  }
+};
+
+// Controller to mark approved as true and rjected as true
+exports.updateIssueStatus = async (req, res) => {
+  try {
+    const { issueId, operation } = req.body; // get issue ID + operation
+
+    if (!issueId ) {
+      return res.status(400).json({ success: false, message: "issueId  are required" });
+    }
+
+        if (!operation) {
+      return res.status(400).json({ success: false, message: " operation are required" });
+    }
+
+    let updateFields = {};
+
+    if (operation === "approved") {
+      updateFields = { approved: true, rejected: false };
+    } else if (operation === "rejected") {
+      updateFields = { rejected: true, approved: false };
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid operation, must be 'approve' or 'reject'" });
+    }
+
+    // Update issue
+    const updatedIssue = await jiraissues.findByIdAndUpdate(
+      issueId,
+      updateFields,
+      { new: true }
+    );
+
+    if (!updatedIssue) {
+      return res.status(404).json({ success: false, message: "Issue not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Issue ${operation}d successfully`,
+      issue: updatedIssue,
+    });
+  } catch (error) {
+    console.error("Error updating issue status:", error);
+    res.status(500).json({ success: false, message: "Server error", error });
+  }
+};
+
 
 // GET issue by id
 exports.getJiraIssueById = async (req, res) => {

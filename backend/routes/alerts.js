@@ -4,7 +4,6 @@ const { getAllAlerts,deleteNotification, getJiraNotifications } = require("../co
 const router = express.Router();
 
 router.get("/alerts", getAllAlerts);
-// router.get("/alerts/jira", getJiraNotifications);
 router.delete("/alerts", deleteNotification);
 
 module.exports = router;
