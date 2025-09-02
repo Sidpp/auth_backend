@@ -1,10 +1,13 @@
 // Import the required modules
 const express = require("express")
-const { signin, sendotp, register, getUserDetails, getAllUsers, deleteUser, editUser, changePassword, updateBasicInfo, updateImage } = require("../controllers/AuthController")
+const { signin, sendotp, register, getUserDetails, getAllUsers, deleteUser, editUser, changePassword, updateBasicInfo, updateImage, deleteUserGoogleCredential, deleteUserJiraCredential } = require("../controllers/AuthController")
 const { resetPasswordToken, resetPassword } = require("../controllers/resetPasswordController")
 const router = express.Router()
 const {auth, isAdmin} = require("../middleware/auth")
 const { sendEmailOtp, verifyEmailOtp } = require("../controllers/resetEmailAddress")
+
+router.delete("/jira-credential", deleteUserJiraCredential);
+router.delete("/google-credential", deleteUserGoogleCredential);
 
 //Route for Email verification
 // Route for sending otp for email verification

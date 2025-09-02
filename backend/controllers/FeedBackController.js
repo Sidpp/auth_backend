@@ -3,7 +3,7 @@ const Feedback = require("../models/feedback"); // adjust the path if needed
 // Create a new feedback
 exports.createFeedback = async (req, res) => {
   try {
-    const { userid, feedback, for: feedbackFor } = req.body;
+    const { userid, feedback, for: feedbackFor, ai_summary, source } = req.body;
 
     // Validate required fields
     if (!userid || !feedback || !feedbackFor) {
@@ -14,6 +14,9 @@ exports.createFeedback = async (req, res) => {
       userid,
       feedback,
       for: feedbackFor,
+      ai_summary,
+      source,
+      isChecked: "false", // always default to string "false"
     });
 
     const savedFeedback = await newFeedback.save();
@@ -27,3 +30,4 @@ exports.createFeedback = async (req, res) => {
     return res.status(500).json({ message: "Server error", error });
   }
 };
+

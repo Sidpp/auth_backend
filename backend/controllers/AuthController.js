@@ -1,13 +1,92 @@
 const bcrypt = require("bcrypt");
+const mongoose =require("mongoose")
 const User = require("../models/User");
 const OTP = require("../models/OTP");
 const jwt = require("jsonwebtoken");
+const Credentials = require("../models/jiracredential"); 
+const JiraIssue = require("../models/jiraissues");
+const GoogleCredential = require("../models/googlecredentials");
+const GoogleSheet = require("../models/googleSheet");
 const otpGenerator = require("otp-generator");
 const mailSender = require("../utils/mailSender");
 const { uploadImageToCloudinary } = require("../utils/imageUploader")
 const { passwordUpdated } = require("../mail/templates/passwordUpdate");
 
 require("dotenv").config();
+
+exports.deleteUserJiraCredential = async (req, res) => {
+  try {
+    const { user_id } = req.body;
+
+    if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
+      return res.status(400).json({ message: "Invalid or missing user_id" });
+    }
+
+    // 1️⃣ Find the user by _id
+    const user = await User.findById(user_id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 2️⃣ Get the Jira credential linked to this user
+    const credentialId = user.jira_credential_id;
+    if (!credentialId) {
+      return res.status(404).json({ message: "No Jira credential found for this user" });
+    }
+
+    // 3️⃣ Delete all Jira issues linked to this credential
+    await JiraIssue.deleteMany({ user_id: credentialId });
+
+    // 4️⃣ Delete the Jira credential itself
+    await Credentials.findByIdAndDelete(credentialId);
+
+    // 5️⃣ Remove the reference from the user
+    user.jira_credential_id = undefined;
+    await user.save();
+
+    return res.status(200).json({ message: "Jira credential and related issues deleted for this user" });
+  } catch (error) {
+    console.error("Error deleting Jira credential for user:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.deleteUserGoogleCredential = async (req, res) => {
+  try {
+    const { user_id } = req.body;
+
+    if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
+      return res.status(400).json({ message: "Invalid or missing user_id" });
+    }
+
+    // 1️⃣ Find the user
+    const user = await User.findById(user_id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 2️⃣ Find the Google credential linked to this user
+    const googleCredentialId = user.google_credential_id;
+    if (!googleCredentialId) {
+      return res.status(404).json({ message: "No Google credential found for this user" });
+    }
+
+    // 3️⃣ Delete all GoogleSheet rows linked to this credential
+    await GoogleSheet.deleteMany({ userId: user_id });
+
+    // 4️⃣ Delete the Google credential itself
+    await GoogleCredential.findByIdAndDelete(googleCredentialId);
+
+    // 5️⃣ Remove the reference from the user
+    user.google_credential_id = undefined;
+    await user.save();
+
+    return res.status(200).json({ message: "Google credential and related sheets deleted for this user" });
+  } catch (error) {
+    console.error("Error deleting Google credential for user:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 
 
