@@ -13,31 +13,28 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const { cloudinaryConnect } = require("./config/cloudinary");
 const fileUpload = require("express-fileupload");
+// Middlewares
+app.use(express.json());
+app.use(cookieParser());
+app.use(
+  cors({
+    origin: "*",
+    credentials: true,
+  })
+);
+
 
 
 //----------------------------------------------------------------
 const http = require("http");
-const https = require("https");
-const fs = require("fs");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const JiraNotification = require("./models/jiraissues");
 const GoogleSheet = require("./models/googleSheet");
+const server = http.createServer(app);
 
-let server;
-if (process.env.NODE_ENV === "production") {
-  // Use real SSL certificates in production
-  const options = {
-    key: fs.readFileSync("/etc/letsencrypt/live/demo.portfolio-vue.com/privkey.pem"),
-    cert: fs.readFileSync("/etc/letsencrypt/live/demo.portfolio-vue.com/fullchain.pem"),
-  };
-  server = https.createServer(options, app);
-  console.log("Running with HTTPS (production)");
-} else {
-  // Use plain HTTP in local dev
-  server = http.createServer(app);
-  console.log("Running with HTTP (development)");
-}
+
+console.log("Running with HTTP server, ready for Nginx proxy.");
 const io = new Server(server, {
   cors: {
     origin: [
