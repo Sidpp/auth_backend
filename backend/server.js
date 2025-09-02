@@ -24,10 +24,14 @@ const GoogleSheet = require("./models/googleSheet");
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: [
+      "http://localhost:3000",
+      "https://demo.portfolio-vue.com",
+    ],
     methods: ["GET", "POST"],
   },
 });
+
 const { MONGODB_URL } = process.env;
 
 // Connect MongoDB
