@@ -43,6 +43,8 @@ const io = new Server(server, {
     ],
     methods: ["GET", "POST"],
   },
+  
+  path: "/socket.io",
 });
 
 const { MONGODB_URL } = process.env;
