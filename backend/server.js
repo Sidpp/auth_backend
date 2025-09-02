@@ -16,12 +16,18 @@ const fileUpload = require("express-fileupload");
 
 
 //----------------------------------------------------------------
-const http = require("http");
+// const http = require("http");
+const https = require("https");
+const fs = require("fs");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const JiraNotification = require("./models/jiraissues");
 const GoogleSheet = require("./models/googleSheet");
-const server = http.createServer(app);
+// const options = {
+//   key: fs.readFileSync("/etc/letsencrypt/live/demo.portfolio-vue.com/privkey.pem"),
+//   cert: fs.readFileSync("/etc/letsencrypt/live/demo.portfolio-vue.com/fullchain.pem"),
+// };
+const server = https.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: [
