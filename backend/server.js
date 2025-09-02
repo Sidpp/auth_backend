@@ -16,18 +16,28 @@ const fileUpload = require("express-fileupload");
 
 
 //----------------------------------------------------------------
-// const http = require("http");
+const http = require("http");
 const https = require("https");
 const fs = require("fs");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const JiraNotification = require("./models/jiraissues");
 const GoogleSheet = require("./models/googleSheet");
-// const options = {
-//   key: fs.readFileSync("/etc/letsencrypt/live/demo.portfolio-vue.com/privkey.pem"),
-//   cert: fs.readFileSync("/etc/letsencrypt/live/demo.portfolio-vue.com/fullchain.pem"),
-// };
-const server = https.createServer(app);
+
+let server;
+if (process.env.NODE_ENV === "production") {
+  // Use real SSL certificates in production
+  const options = {
+    key: fs.readFileSync("/etc/letsencrypt/live/demo.portfolio-vue.com/privkey.pem"),
+    cert: fs.readFileSync("/etc/letsencrypt/live/demo.portfolio-vue.com/fullchain.pem"),
+  };
+  server = https.createServer(options, app);
+  console.log("Running with HTTPS (production)");
+} else {
+  // Use plain HTTP in local dev
+  server = http.createServer(app);
+  console.log("Running with HTTP (development)");
+}
 const io = new Server(server, {
   cors: {
     origin: [
