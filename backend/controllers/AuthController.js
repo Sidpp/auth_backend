@@ -1,15 +1,15 @@
 const bcrypt = require("bcrypt");
-const mongoose =require("mongoose")
+const mongoose = require("mongoose");
 const User = require("../models/User");
 const OTP = require("../models/OTP");
 const jwt = require("jsonwebtoken");
-const Credentials = require("../models/jiracredential"); 
+const Credentials = require("../models/jiracredential");
 const JiraIssue = require("../models/jiraissues");
 const GoogleCredential = require("../models/googlecredentials");
 const GoogleSheet = require("../models/googleSheet");
 const otpGenerator = require("otp-generator");
 const mailSender = require("../utils/mailSender");
-const { uploadImageToCloudinary } = require("../utils/imageUploader")
+const { uploadImageToCloudinary } = require("../utils/imageUploader");
 const { passwordUpdated } = require("../mail/templates/passwordUpdate");
 
 require("dotenv").config();
@@ -22,7 +22,7 @@ exports.deleteUserJiraCredential = async (req, res) => {
       return res.status(400).json({ message: "Invalid or missing user_id" });
     }
 
-    // 1️⃣ Find the user by _id
+    // 1️⃣ Find the user
     const user = await User.findById(user_id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -31,22 +31,27 @@ exports.deleteUserJiraCredential = async (req, res) => {
     // 2️⃣ Get the Jira credential linked to this user
     const credentialId = user.jira_credential_id;
     if (!credentialId) {
-      return res.status(404).json({ message: "No Jira credential found for this user" });
+      return res
+        .status(404)
+        .json({ message: "No Jira credential found for this user" });
     }
 
-    // 3️⃣ Delete all Jira issues linked to this credential
-    await JiraIssue.deleteMany({ user_id: credentialId });
+    // 3️⃣ Remove only this user_id from credentials.userid array
+    await Credentials.findByIdAndUpdate(
+      credentialId,
+      { $pull: { userid: user_id } }, // pull user from array
+      { new: true }
+    );
 
-    // 4️⃣ Delete the Jira credential itself
-    await Credentials.findByIdAndDelete(credentialId);
-
-    // 5️⃣ Remove the reference from the user
+    // 4️⃣ Remove the reference from the user
     user.jira_credential_id = undefined;
     await user.save();
 
-    return res.status(200).json({ message: "Jira credential and related issues deleted for this user" });
+    return res.status(200).json({
+      message: "User unlinked from Jira credential successfully",
+    });
   } catch (error) {
-    console.error("Error deleting Jira credential for user:", error);
+    console.error("Error unlinking user from Jira credential:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -68,7 +73,9 @@ exports.deleteUserGoogleCredential = async (req, res) => {
     // 2️⃣ Find the Google credential linked to this user
     const googleCredentialId = user.google_credential_id;
     if (!googleCredentialId) {
-      return res.status(404).json({ message: "No Google credential found for this user" });
+      return res
+        .status(404)
+        .json({ message: "No Google credential found for this user" });
     }
 
     // 3️⃣ Delete all GoogleSheet rows linked to this credential
@@ -81,14 +88,14 @@ exports.deleteUserGoogleCredential = async (req, res) => {
     user.google_credential_id = undefined;
     await user.save();
 
-    return res.status(200).json({ message: "Google credential and related sheets deleted for this user" });
+    return res.status(200).json({
+      message: "Google credential and related sheets deleted for this user",
+    });
   } catch (error) {
     console.error("Error deleting Google credential for user:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
 
 // Get All Users (excluding passwords)
 exports.getAllUsers = async (req, res) => {
@@ -123,7 +130,15 @@ exports.getAllUsers = async (req, res) => {
 exports.editUser = async (req, res) => {
   try {
     const { userId } = req.params; // user ID from URL params
-    const { name, email, role,projectrole,assignJiraProjects,assignGoogleProjects } = req.body; // fields to update
+    const {
+      name,
+      email,
+      role,
+      source,
+      projectrole,
+      assignJiraProjects,
+      assignGoogleProjects,
+    } = req.body; // fields to update
 
     if (!name && !email && !role && !projectrole) {
       return res.status(400).json({
@@ -135,7 +150,18 @@ exports.editUser = async (req, res) => {
     // Update user (exclude password updates here)
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $set: { name, email, role, projectrole,assignJiraProjects,assignGoogleProjects,assignGoogleProjects } },
+      {
+        $set: {
+          name,
+          email,
+          role,
+          source,
+          projectrole,
+          assignJiraProjects,
+          assignGoogleProjects,
+          assignGoogleProjects,
+        },
+      },
       { new: true, runValidators: true, select: "-password" }
     );
 
@@ -224,14 +250,24 @@ exports.getUserDetails = async (req, res) => {
 exports.register = async (req, res) => {
   try {
     // Destructure fields from the request body
-    const { name, email, password, confirmPassword, role, projectrole } = req.body;
+    const {
+      name,
+      email,
+      password,
+      source,
+      confirmPassword,
+      role,
+      projectrole,
+    } = req.body;
+
     // Check if All Details are there or not
-    if (!name || !email || !password || !confirmPassword || !projectrole ) {
+    if (!name || !email || !password || !confirmPassword || !role) {
       return res.status(403).send({
         success: false,
         message: "All Fields are required",
       });
     }
+
     // Check if password and confirm password match
     if (password !== confirmPassword) {
       return res.status(400).json({
@@ -239,6 +275,22 @@ exports.register = async (req, res) => {
         message:
           "Password and Confirm Password do not match. Please try again.",
       });
+    }
+
+    // Require source/projectrole if role = User
+    if (role === "User") {
+      if (!source) {
+        return res.status(403).json({
+          success: false,
+          message: "Source is required for User role",
+        });
+      }
+      if (!projectrole) {
+        return res.status(403).json({
+          success: false,
+          message: "Project Role is required for User role",
+        });
+      }
     }
 
     // Check if user already exists
@@ -253,13 +305,13 @@ exports.register = async (req, res) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
       role: role,
-      projectrole: projectrole
+      projectrole: projectrole || null,
+      source: source || null,
     });
 
     return res.status(200).json({
@@ -482,32 +534,32 @@ exports.changePassword = async (req, res) => {
 //update profile image
 exports.updateImage = async (req, res) => {
   try {
-    const displayPicture = req.files.displayPicture
-    const userId = req.user.id
+    const displayPicture = req.files.displayPicture;
+    const userId = req.user.id;
     const image = await uploadImageToCloudinary(
       displayPicture,
       process.env.FOLDER_NAME,
       1000,
       1000
-    )
-    console.log(image)
+    );
+    console.log(image);
     const updatedProfile = await User.findByIdAndUpdate(
       { _id: userId },
       { image: image.secure_url },
       { new: true }
-    )
+    );
     res.send({
       success: true,
       message: `Image Updated successfully`,
       data: updatedProfile,
-    })
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: error.message,
-    })
+    });
   }
-}
+};
 
 //Update info
 exports.updateBasicInfo = async (req, res) => {

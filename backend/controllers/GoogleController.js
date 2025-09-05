@@ -45,7 +45,7 @@ exports.markGoogleAlertRead = async (req, res) => {
   }
 };
 
-
+//for alert
 exports.updateGoogleAlertStatus = async (req, res) => {
   try {
     const { projectId, alertId, operation } = req.body; 
@@ -114,6 +114,7 @@ exports.updateGoogleAlertStatus = async (req, res) => {
   }
 };
 
+//for aisummary 
 exports.updateGoogleIssueStatus = async (req, res) => {
   try {
     const { projectId, operation } = req.body; // projectId = _id of GoogleSheet doc

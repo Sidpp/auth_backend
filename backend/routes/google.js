@@ -3,6 +3,7 @@ const { getAllGoogleDetails,markGoogleAlertRead,updateGoogleAlertStatus, getGoog
 const {auth} = require("../middleware/auth")
 const router = express.Router()
 
+//ai summary
 router.post("/google/approve", updateGoogleIssueStatus);
 router.get("/google/credentials",auth,getGoogleCredentials)
 router.get("/google",auth,getAllGoogleDetails)

@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
     },
     projectrole: {
       type: String,
-      enum: ["Executive", "Portfolio Manager", "Team Leader","Project Manager"],
+     
     },
     assignJiraProjects: [{
       type: mongoose.Schema.Types.ObjectId,
@@ -48,6 +48,9 @@ const userSchema = new mongoose.Schema(
       default: Date.now,
     },
     pendingEmail: {
+      type: String,
+    },
+    source: {
       type: String,
     },
     emailVerificationToken: {
