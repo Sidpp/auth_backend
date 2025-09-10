@@ -27,16 +27,21 @@ const userSchema = new mongoose.Schema(
     },
     projectrole: {
       type: String,
-     
     },
-    assignJiraProjects: [{
+    assignJiraProjects: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "issues",
+      },
+    ],
+    googleProjectAuthor: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "issues",
-    }],
-    assignGoogleProjects: [{
+      ref: "User",
+    },
+    jiraProjectAuthor: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "GoogleSheet",
-    }],
+      ref: "User",
+    },
     image: {
       type: String,
     },

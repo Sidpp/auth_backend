@@ -45,7 +45,9 @@ const AiPredictionsSchema = new mongoose.Schema({
 const SourceDataSchema = new mongoose.Schema({
   Program: String,
   Portfolio: String,
-  Project_Manager: String,
+    "Project Manager": String,
+  "Program Manager": String,
+  "Portfolio Manager": String,
   Vendor: String,
   Contract_ID: String,
   Contract_Start_Date: String,

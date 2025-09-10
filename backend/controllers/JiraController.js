@@ -182,6 +182,29 @@ exports.getJiraIssueById = async (req, res) => {
   }
 };
 
+// Get multiple Jira issues by IDs
+exports.getJiraIssuesByIds = async (req, res) => {
+  try {
+    const ids = req.query.ids?.split(",").map(id => id.trim());
+    if (!ids || !ids.length) {
+      return res.status(400).json({ error: "No Jira IDs provided" });
+    }
+
+    // Fetch all issues in a single DB query
+    const issues = await jiraissues.find({ _id: { $in: ids } });
+
+    return res.status(200).json({
+      success: true,
+      message: "Jira issues fetched successfully",
+      issues,
+    });
+  } catch (error) {
+    console.error("Error fetching Jira issues:", error.message);
+    return res.status(500).json({ error: "Server error while fetching Jira issues" });
+  }
+};
+
+
 // Get all Jira Issues
 exports.getAllJiraIssues = async (req, res) => {
   try {
@@ -191,6 +214,52 @@ exports.getAllJiraIssues = async (req, res) => {
       return res.status(400).json({ error: "userid required " });
     }
     const credentials = await Credential.findOne({ userid: userId });
+
+    if (!credentials) {
+      return res.status(400).json({ error: "Credentials not found " });
+    }
+    // console.log("data",credentials.issues)
+
+    const issueIds = credentials.issues; // Array of ObjectIds
+
+    if (!issueIds || issueIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No issues linked to this credential.",
+        issues: [],
+      });
+    }
+
+    // ✅ Find all issues with _id in credentials.issues
+    const issues = await jiraissues.find({ _id: { $in: issueIds } });
+
+    return res.status(200).json({
+      success: true,
+      message: "Jira issues fetched successfully from DB.",
+      issues,
+    });
+  } catch (error) {
+    console.error("Error fetching Jira issues from DB:", error.message);
+    return res
+      .status(500)
+      .json({ error: "Server error while fetching issues." });
+  }
+};
+
+// Get assign Jira Issues
+exports.getAssignJiraIssues = async (req, res) => {
+  try {
+    const {userId} = req.body;
+
+
+    if (!userId) {
+      return res.status(400).json({ error: "userid required " });
+    }
+ 
+    // Cast to ObjectId
+    const credentials = await Credential.findOne({
+      userid: new mongoose.Types.ObjectId(userId),
+    });
 
     if (!credentials) {
       return res.status(400).json({ error: "Credentials not found " });

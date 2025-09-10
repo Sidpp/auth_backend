@@ -199,7 +199,7 @@ exports.getGoogleSheetById = async (req, res) => {
   }
 };
 
-// GET all data by user
+// GET all data by user token
 exports.getAllGoogleDetails = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -228,7 +228,49 @@ exports.getAllGoogleDetails = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Jira issues fetched successfully from DB.",
+      message: "Google issues fetched successfully from DB.",
+      data: issues,
+    });
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+
+// GET google data by assigned id
+exports.getAssignedGoogleDetails = async (req, res) => {
+  try {
+    const {userId} = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: "userid required " });
+    }
+    const credentials = await googlecredentials.findOne({ userId: userId });
+
+    if (!credentials) {
+      return res.status(400).json({ error: "Credentials not found " });
+    }
+
+    const issueIds = credentials.rows;
+
+    if (!issueIds || issueIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No issues linked to this credential.",
+        issues: [],
+      });
+    }
+
+    // Find all issues with _id in credentials.issues
+    const issues = await GoogleSheet.find({ _id: { $in: issueIds } });
+
+    return res.status(200).json({
+      success: true,
+      message: "Google issues fetched successfully from DB.",
       data: issues,
     });
   } catch (error) {

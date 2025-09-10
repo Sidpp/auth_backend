@@ -1,26 +1,33 @@
-const Issue = require("../models/jiraissues"); // Jira model
-const GoogleSheet = require("../models/googleSheet"); // Google model
+const Issue = require("../models/jiraissues");
+const GoogleSheet = require("../models/googleSheet");
+const Credential = require("../models/jiracredential.js");
+const googlecredentials = require("../models/googlecredentials");
+const User = require("../models/User");
 
 exports.deleteNotification = async (req, res) => {
   try {
     const { id, source, alert_id } = req.body;
 
     if (!id || !source || !alert_id) {
-      return res.status(400).json({ success: false, message: "Missing fields" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing fields" });
     }
 
     if (source === "Jira") {
       await Issue.updateOne(
         { _id: id },
-        { $pull: { alerts: { alert_id } } }   // ✅ match by alert_id
+        { $pull: { alerts: { alert_id } } } // ✅ match by alert_id
       );
     } else if (source === "Google") {
       await GoogleSheet.updateOne(
         { _id: id },
-        { $pull: { "ai_predictions.alerts": { alert_id } } }  // ✅ match by alert_id
+        { $pull: { "ai_predictions.alerts": { alert_id } } } // ✅ match by alert_id
       );
     } else {
-      return res.status(400).json({ success: false, message: "Invalid source" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid source" });
     }
 
     res.json({ success: true, message: "Notification deleted" });
@@ -30,6 +37,175 @@ exports.deleteNotification = async (req, res) => {
   }
 };
 
+exports.getAllAlertsByUserId = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(400).json({ error: "userid required" });
+    }
+
+    const user = await User.findById(userId).select("-password");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Credential IDs already stored on user
+    const jira_id = user.jira_credential_id?.toString() || null;
+    const google_id = user.google_credential_id?.toString() || null;
+
+    // --- Fetch Alerts ---
+    const [issues, projects] = await Promise.all([
+      jira_id
+        ? Issue.find(
+            { user_id: jira_id, alerts: { $exists: true, $ne: [] } },
+            { project_name: 1, alerts: 1 }
+          ).lean()
+        : [],
+      google_id
+        ? GoogleSheet.find(
+            {
+              connectionId: google_id,
+              "ai_predictions.alerts": { $exists: true, $ne: [] },
+            },
+            {
+              "source_data.Project": 1,
+        "source_data.Program Manager": 1,
+        "source_data.Portfolio Manager": 1,
+        "source_data.Project Manager": 1,
+              "ai_predictions.alerts": 1,
+            }
+          ).lean()
+        : [],
+    ]);
+
+    // --- Flatten Jira Alerts ---
+    const jiraAlerts = issues.flatMap((issue) =>
+      issue.alerts.map((alert) => ({
+        _id: issue._id,
+        source: "Jira",
+        project: issue.project_name,
+        ...alert,
+        timestamp: alert.alert_timestamp || alert.timestamp,
+      }))
+    );
+
+    // --- Flatten Google Alerts ---
+    const googleAlerts = projects.flatMap((project) =>
+      project.ai_predictions.alerts.map((alert) => ({
+        _id: project._id,
+        source: "Google",
+        project: project.source_data?.Project || "Unknown Project",
+    portfolioManager: project.source_data?.["Portfolio Manager"] || "Unknown",
+    projectManager: project.source_data?.["Project Manager"] || "Unknown",
+    programManager: project.source_data?.["Program Manager"] || "Unknown",
+
+        ...alert,
+        timestamp: alert.alert_timestamp || alert.timestamp,
+      }))
+    );
+
+    // --- Merge & Sort ---
+    const allAlerts = [...jiraAlerts, ...googleAlerts].sort(
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+    );
+
+    res.json({ success: true, alerts: allAlerts });
+  } catch (error) {
+    console.error("Error fetching alerts:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.getAssignAlerts = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(400).json({ error: "userid required " });
+    }
+
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const jiraUserId = user.jiraProjectAuthor;
+    const googleUserId = user.googleProjectAuthor;
+
+    let jira_id = null;
+    let google_id = null;
+
+    // --- Jira ---
+    if (jiraUserId) {
+      const jiraCredentials = await Credential.findOne({ userid: jiraUserId });
+      jira_id = jiraCredentials?._id || null;
+    }
+
+    // --- Google ---
+    if (googleUserId) {
+      const googleCredentials = await googlecredentials.findOne({
+        userId: googleUserId,
+      });
+      google_id = googleCredentials?._id || null;
+    }
+
+    // --- Alerts ---
+    const [issues, projects] = await Promise.all([
+      jira_id
+        ? Issue.find(
+            { user_id: jira_id, alerts: { $exists: true, $ne: [] } },
+            { project_name: 1, alerts: 1 }
+          ).lean()
+        : [],
+      google_id
+        ? GoogleSheet.find(
+            {
+              connectionId: google_id,
+              "ai_predictions.alerts": { $exists: true, $ne: [] },
+            },
+            { "source_data.Project": 1, "ai_predictions.alerts": 1 }
+          ).lean()
+        : [],
+    ]);
+
+    // Flatten Jira alerts
+    const jiraAlerts = issues.flatMap((issue) =>
+      issue.alerts.map((alert) => ({
+        _id: issue._id,
+        source: "Jira",
+        project: issue.project_name,
+        ...alert,
+        timestamp: alert.alert_timestamp || alert.timestamp, // normalize
+      }))
+    );
+
+    // Flatten Google alerts
+    const googleAlerts = projects.flatMap((project) =>
+      project.ai_predictions.alerts.map((alert) => ({
+        _id: project._id,
+        source: "Google",
+        project: project.source_data?.Project || "Unknown Project",
+        ...alert,
+        timestamp: alert.alert_timestamp || alert.timestamp,
+      }))
+    );
+
+    // Merge & sort
+    const allAlerts = [...jiraAlerts, ...googleAlerts].sort(
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+    );
+
+    res.json({ success: true, alerts: allAlerts });
+  } catch (error) {
+    console.error("Error fetching alerts:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
 
 exports.getAllAlerts = async (req, res) => {
   try {
@@ -77,6 +253,3 @@ exports.getAllAlerts = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
-
- 

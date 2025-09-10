@@ -43,9 +43,12 @@ exports.deleteUserJiraCredential = async (req, res) => {
       { new: true }
     );
 
-    // 4️⃣ Remove the reference from the user
-    user.jira_credential_id = undefined;
-    await user.save();
+    // 4️⃣ Remove jira_credential_id from user safely
+    await User.findByIdAndUpdate(
+      user_id,
+      { $unset: { jira_credential_id: "" } }, // cleanly remove field
+      { new: true }
+    );
 
     return res.status(200).json({
       message: "User unlinked from Jira credential successfully",
@@ -137,7 +140,8 @@ exports.editUser = async (req, res) => {
       source,
       projectrole,
       assignJiraProjects,
-      assignGoogleProjects,
+      googleProjectAuthor,
+      jiraProjectAuthor
     } = req.body; // fields to update
 
     if (!name && !email && !role && !projectrole) {
@@ -158,8 +162,8 @@ exports.editUser = async (req, res) => {
           source,
           projectrole,
           assignJiraProjects,
-          assignGoogleProjects,
-          assignGoogleProjects,
+          googleProjectAuthor,
+          jiraProjectAuthor
         },
       },
       { new: true, runValidators: true, select: "-password" }
@@ -258,7 +262,24 @@ exports.register = async (req, res) => {
       confirmPassword,
       role,
       projectrole,
+      assignJiraProjects,
+      googleProjectAuthor,
+      jiraProjectAuthor,
     } = req.body;
+
+    // console.log(
+    //   "data",
+    //   name,
+    //   email,
+    //   password,
+    //   source,
+    //   confirmPassword,
+    //   role,
+    //   projectrole,
+    //   assignJiraProjects,
+    //   googleProjectAuthor,
+    //   jiraProjectAuthor
+    // );
 
     // Check if All Details are there or not
     if (!name || !email || !password || !confirmPassword || !role) {
@@ -278,17 +299,30 @@ exports.register = async (req, res) => {
     }
 
     // Require source/projectrole if role = User
-    if (role === "User") {
-      if (!source) {
-        return res.status(403).json({
-          success: false,
-          message: "Source is required for User role",
-        });
-      }
+    if (source === "Jira") {
       if (!projectrole) {
         return res.status(403).json({
           success: false,
-          message: "Project Role is required for User role",
+          message: "Project Role is required for Jira Platform",
+        });
+      }
+      // if (!assignJiraProjects) {
+      //   return res.status(403).json({
+      //     success: false,
+      //     message: "AssignJiraProjects is required for Jira Platform",
+      //   });
+      // }
+      // if (!jiraProjectAuthor) {
+      //   return res.status(403).json({
+      //     success: false,
+      //     message: "AssignJiraProjects is required for Jira Platform",
+      //   });
+      // }
+    } else {
+      if (!googleProjectAuthor) {
+        return res.status(403).json({
+          success: false,
+          message: "googleProjectAuthor is required for Google Platform",
         });
       }
     }
@@ -312,6 +346,9 @@ exports.register = async (req, res) => {
       role: role,
       projectrole: projectrole || null,
       source: source || null,
+      assignJiraProjects: assignJiraProjects || [],
+      googleProjectAuthor: googleProjectAuthor || null,
+      jiraProjectAuthor: jiraProjectAuthor || null,
     });
 
     return res.status(200).json({
