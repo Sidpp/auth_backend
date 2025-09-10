@@ -86,18 +86,48 @@ mongoose.connection.once("open", () => {
         const fullIssue = change.fullDocument;
         const id = fullIssue?._id;
 
+        // if (fullIssue?.alerts?.length) {
+        //   // Only keep objects that look like real alerts
+        //   const validAlerts = fullIssue.alerts.filter(
+        //     (a) => a.alert_type && a.message && a.alert_timestamp
+        //   );
+
+        //   if (validAlerts.length) {
+        //     const lastAlert = validAlerts[validAlerts.length - 1];
+        //     const latestTimestamp = lastAlert.alert_timestamp;
+
+        //     const newAlerts = validAlerts.filter(
+        //       (a) => a.alert_timestamp === latestTimestamp
+        //     );
+
+        //     newAlerts.forEach((alert) => {
+        //       console.log("aalerts", alert);
+        //       console.log(`Emitting Jira alert for role: ${alert.role}`);
+        //       io.emit("new-notification", {
+        //         ...alert,
+        //         id,
+        //         source: "Jira",
+        //       });
+        //     });
+        //   }
+        // }
+
         if (fullIssue?.alerts?.length) {
-          // Only keep objects that look like real alerts
           const validAlerts = fullIssue.alerts.filter(
             (a) => a.alert_type && a.message && a.alert_timestamp
           );
 
           if (validAlerts.length) {
             const lastAlert = validAlerts[validAlerts.length - 1];
-            const latestTimestamp = lastAlert.alert_timestamp;
+
+            // Normalize timestamp to ISO string for comparison
+            const latestTimestamp = new Date(
+              lastAlert.alert_timestamp
+            ).toISOString();
 
             const newAlerts = validAlerts.filter(
-              (a) => a.alert_timestamp === latestTimestamp
+              (a) =>
+                new Date(a.alert_timestamp).toISOString() === latestTimestamp
             );
 
             newAlerts.forEach((alert) => {
