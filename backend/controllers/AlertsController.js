@@ -3,6 +3,85 @@ const GoogleSheet = require("../models/googleSheet");
 const Credential = require("../models/jiracredential.js");
 const googlecredentials = require("../models/googlecredentials");
 const User = require("../models/User");
+const mongoose = require("mongoose")
+
+
+// Bulk mark alerts (Jira + Google) as read
+exports.markAllAlertsRead = async (req, res) => {
+  try {
+    const { jiraAlerts = [], googleAlerts = [] } = req.body;
+    // jiraAlerts: [{ issueId, alertId }]
+    // googleAlerts: [{ projectId, alertId }]
+
+    if (!jiraAlerts.length && !googleAlerts.length) {
+      return res.status(400).json({
+        success: false,
+        message: "No alerts provided",
+      });
+    }
+
+    const jiraResults = [];
+    const googleResults = [];
+
+    // ---- Bulk update Jira alerts ----
+    for (const { issueId, alertId } of jiraAlerts) {
+      if (!issueId || !alertId) continue;
+
+      const updatedIssue = await Issue.findOneAndUpdate(
+        {
+          _id: new mongoose.Types.ObjectId(issueId),
+          "alerts.alert_id": new mongoose.Types.ObjectId(alertId),
+        },
+        { $set: { "alerts.$.readed": true } },
+        { new: true }
+      );
+
+      if (updatedIssue) {
+        jiraResults.push({ issueId, alertId, status: "updated" });
+      } else {
+        jiraResults.push({ issueId, alertId, status: "not found" });
+      }
+    }
+
+    // ---- Bulk update Google alerts ----
+    for (const { projectId, alertId } of googleAlerts) {
+      if (!projectId || !alertId) continue;
+
+      const updatedProject = await GoogleSheet.findOneAndUpdate(
+        {
+          _id: projectId,
+          "ai_predictions.alerts.alert_id": alertId,
+        },
+        { $set: { "ai_predictions.alerts.$.readed": true } },
+        { new: true }
+      );
+
+      if (updatedProject) {
+        googleResults.push({ projectId, alertId, status: "updated" });
+      } else {
+        googleResults.push({ projectId, alertId, status: "not found" });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Alerts processed",
+      results: {
+        jira: jiraResults,
+        google: googleResults,
+      },
+    });
+  } catch (error) {
+    console.error("Error marking alerts as read:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error,
+    });
+  }
+};
+
+
 
 exports.deleteNotification = async (req, res) => {
   try {
