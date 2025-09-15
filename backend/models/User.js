@@ -42,6 +42,18 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+
+    assignJiraProject: [
+      {
+        jiraProjectName: {
+          type: String,
+        },
+        jiraProjectCredentials: {
+          type: String,
+        },
+      },
+    ],
+
     image: {
       type: String,
     },

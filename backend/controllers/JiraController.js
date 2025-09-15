@@ -204,6 +204,43 @@ exports.getJiraIssuesByIds = async (req, res) => {
   }
 };
 
+// Get all Jira Issues based on assignJiraProject sent in request body
+exports.getAllJiraIssuesByAssign = async (req, res) => {
+  try {
+    const { assignJiraProject } = req.body;
+
+    if (!assignJiraProject || !Array.isArray(assignJiraProject) || assignJiraProject.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No Jira projects provided.",
+        issues: [],
+      });
+    }
+
+    // Build query for all assigned projects
+    const query = {
+      $or: assignJiraProject.map((proj) => ({
+        project_name: proj.jiraProjectName,
+       // user_id: proj.jiraProjectCredentials, 
+      })),
+    };
+
+    // Fetch issues matching the query
+    const issues = await jiraissues.find(query);
+
+    return res.status(200).json({
+      success: true,
+      message: "Jira issues fetched successfully",
+      issues,
+    });
+  } catch (error) {
+    console.error("Error fetching Jira issues:", error.message);
+    return res.status(500).json({
+      error: "Server error while fetching issues",
+    });
+  }
+};
+
 
 // Get all Jira Issues
 exports.getAllJiraIssues = async (req, res) => {

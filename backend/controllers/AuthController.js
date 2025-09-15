@@ -141,8 +141,10 @@ exports.editUser = async (req, res) => {
       projectrole,
       assignJiraProjects,
       googleProjectAuthor,
-      jiraProjectAuthor
+      jiraProjectAuthor,
+      assignJiraProject
     } = req.body; // fields to update
+
 
     if (!name && !email && !role && !projectrole) {
       return res.status(400).json({
@@ -163,11 +165,15 @@ exports.editUser = async (req, res) => {
           projectrole,
           assignJiraProjects,
           googleProjectAuthor,
-          jiraProjectAuthor
+          jiraProjectAuthor,
+          assignJiraProject
         },
       },
       { new: true, runValidators: true, select: "-password" }
     );
+
+   
+
 
     if (!updatedUser) {
       return res.status(404).json({
@@ -265,6 +271,7 @@ exports.register = async (req, res) => {
       assignJiraProjects,
       googleProjectAuthor,
       jiraProjectAuthor,
+      assignJiraProject
     } = req.body;
 
     // console.log(
@@ -306,18 +313,6 @@ exports.register = async (req, res) => {
           message: "Project Role is required for Jira Platform",
         });
       }
-      // if (!assignJiraProjects) {
-      //   return res.status(403).json({
-      //     success: false,
-      //     message: "AssignJiraProjects is required for Jira Platform",
-      //   });
-      // }
-      // if (!jiraProjectAuthor) {
-      //   return res.status(403).json({
-      //     success: false,
-      //     message: "AssignJiraProjects is required for Jira Platform",
-      //   });
-      // }
     } else {
       if (!googleProjectAuthor) {
         return res.status(403).json({
@@ -349,6 +344,7 @@ exports.register = async (req, res) => {
       assignJiraProjects: assignJiraProjects || [],
       googleProjectAuthor: googleProjectAuthor || null,
       jiraProjectAuthor: jiraProjectAuthor || null,
+      assignJiraProject:assignJiraProject || [],
     });
 
     return res.status(200).json({

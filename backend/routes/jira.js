@@ -1,8 +1,9 @@
 const express = require("express")
 const { auth } = require("../middleware/auth")
-const { callJiraConnectAPI,markJiraAlertRead,updateAlertStatus, getAllJiraIssues, getJiraCredentials, getJiraIssueById, updateIssueStatus, getJiraIssuesByIds, getAssignJiraIssues } = require("../controllers/JiraController")
+const { callJiraConnectAPI,markJiraAlertRead,updateAlertStatus, getAllJiraIssues, getJiraCredentials, getJiraIssueById, updateIssueStatus, getJiraIssuesByIds, getAssignJiraIssues, getAllJiraIssuesByAssign } = require("../controllers/JiraController")
 const router = express.Router()
 
+router.post("/jira/issues/assign",getAllJiraIssuesByAssign)
 
 router.get("/jira/credentials",auth,getJiraCredentials)
 router.post("/jira/connect",auth,callJiraConnectAPI)
